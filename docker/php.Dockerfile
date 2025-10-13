@@ -41,6 +41,7 @@ RUN apk --update add wget \
     icu-dev \
     zip libzip-dev \
     postgresql-dev \
+    linux-headers \
     && docker-php-ext-install pdo pdo_mysql pdo_pgsql pgsql opcache exif sockets \
     && docker-php-ext-configure zip && docker-php-ext-install zip \
     && docker-php-ext-configure intl && docker-php-ext-install intl \

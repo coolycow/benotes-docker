@@ -49,7 +49,7 @@ RUN mkdir -p /docker-entrypoint.d && \
 # КОНФИГУРАЦИИ
 COPY ./opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 COPY ./app.json /docker-entrypoint.d/app.json
-COPY benotes.ru.pem /docker-entrypoint.d/vitaback.coolycow.com.pem
+COPY benotes.ru.pem /docker-entrypoint.d/benotes.ru.pem
 
 # Unit должен запускаться от имени root пользователя!!!
 # USER ${UID}:${GID}
