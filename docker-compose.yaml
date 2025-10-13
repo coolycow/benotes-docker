@@ -1,0 +1,169 @@
+volumes:
+  postgres_data:
+  mariadb_data:
+  redis_data:
+  unit_data:
+  
+networks:
+  benotes_net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1400
+
+services:
+  # NGINX Unit
+  unit:
+    build:
+      context: docker/unit
+      dockerfile: Dockerfile
+      args:
+        - PHP_VERSION=${PHP_VERSION:-8.3}
+        - UID=${PHP_WORKER_UID:-1000}
+        - GID=${PHP_WORKER_GID:-1000}
+        - UNAME=${PHP_WORKER_UNAME:-benotes}
+        - GNAME=${PHP_WORKER_GNAME:-benotes}
+    ports:
+      - "8013:80"
+    volumes:
+      - ./src:/var/www/benotes
+      - ./storage:/var/www/storage
+    depends_on:
+      - redis
+      - mysql
+      - worker
+      - horizon
+    networks:
+      - benotes_net
+
+  # MARIADB
+  mysql:
+    image: "mariadb:10"
+    ports:
+      - "3357:3306"
+    env_file:
+      - docker/mysql/.env
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - benotes_net
+
+  # POSTGRESQL
+  postgres:
+    image: "postgres:17.5"
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "/scripts/pg_healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    env_file:
+      - docker/postgres/.env
+    volumes:
+      - ./scripts:/scripts
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - benotes_net
+
+  # REDIS
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    ports:
+      - "6391:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - benotes_net
+
+  # CERTBOT
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./certs:/etc/letsencrypt
+      - ./src:/var/www/benotes
+    command: "sleep infinity"
+    restart: always
+    networks:
+      - benotes_net
+
+  # BASE PHP IMAGE
+  php-base:
+    build:
+      context: docker
+      dockerfile: php.Dockerfile
+      args:
+        - PHP_VERSION=${PHP_VERSION:-8.3}
+        - UID=${PHP_WORKER_UID:-1000}
+        - GID=${PHP_WORKER_GID:-1000}
+        - UNAME=${PHP_WORKER_UNAME:-benotes}
+        - GNAME=${PHP_WORKER_GNAME:-benotes}
+      tags:
+        - php-base:${PHP_VERSION:-8.3}
+    networks:
+      - benotes_net
+
+  # COMPOSER
+  composer:
+    image: php-base:${PHP_VERSION:-8.3}
+    environment:
+      - INSTALL_SUPERVISOR=false
+    command: composer
+    volumes:
+      - ./src:/var/www/benotes
+      - ./storage:/var/www/storage
+    entrypoint: ["composer"]
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - benotes_net
+
+  # ARTISAN
+  artisan:
+    image: php-base:${PHP_VERSION:-8.3}
+    environment:
+      - INSTALL_SUPERVISOR=false
+    volumes:
+      - ./src:/var/www/benotes
+      - ./storage:/var/www/storage
+    entrypoint: ["php", "/var/www/benotes/artisan"]
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - benotes_net
+
+  # HORIZON
+  horizon:
+    image: php-base:${PHP_VERSION:-8.3}
+    environment:
+      - INSTALL_SUPERVISOR=true
+    command: supervisord
+    volumes:
+      - ./src:/var/www/benotes
+      - ./storage:/var/www/storage
+      - ./docker/horizon/supervisord.d:/etc/supervisord.d
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - benotes_net
+
+  # PHP-WORKER
+  worker:
+    image: php-base:${PHP_VERSION:-8.3}
+    environment:
+      - INSTALL_SUPERVISOR=true
+    command: supervisord
+    volumes:
+      - ./src:/var/www/benotes
+      - ./storage:/var/www/storage
+      - ./docker/worker/supervisord.d:/etc/supervisord.d
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - benotes_net

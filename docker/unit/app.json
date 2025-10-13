@@ -1,0 +1,68 @@
+{
+  "listeners": {
+    "*:80": {
+      "pass": "routes"
+    }
+  },
+  "routes": [
+    {
+      "match": {
+        "uri": "/.well-known/acme-challenge/*"
+      },
+      "action": {
+        "share": "/var/www/benotes/public$uri"
+      }
+    },
+    {
+      "match": { "uri": ["/livewire/*", "/filament/*"] },
+      "action": { "pass": "applications/laravel" }
+    },
+    {
+      "match": {
+        "uri": [
+          "*.css",
+          "*.js",
+          "*.png",
+          "*.jpg",
+          "*.svg",
+          "*.gif",
+          "*.ico",
+          "*.ttf",
+          "*.woff",
+          "*.woff2"
+        ]
+      },
+      "action": {
+        "share": "/var/www/benotes/public$uri",
+        "response_headers": {
+          "Cache-Control": "public, max-age=604800",
+          "Access-Control-Allow-Origin": "*"
+        }
+      }
+    },
+    {
+      "action": {
+        "pass": "applications/laravel"
+      }
+    }
+  ],
+  "applications": {
+    "laravel": {
+      "type": "php",
+      "user": "benotes",
+      "group": "benotes",
+      "root": "/var/www/benotes/public",
+      "script": "index.php",
+      "index": "index.php",
+      "processes": {
+        "max": 20,
+        "spare": 5
+      },
+      "isolation": {
+        "namespaces": {
+          "credential": false
+        }
+      }
+    }
+  }
+}
