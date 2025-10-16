@@ -52,6 +52,19 @@ RUN mkdir -p /usr/src/php/ext/redis && \
     curl -L https://github.com/phpredis/phpredis/archive/5.3.4.tar.gz | tar xvz -C /usr/src/php/ext/redis --strip 1 && \
     docker-php-ext-install redis
 
+# ==== УСТАНОВКА CHROMIUM ====
+RUN apk add --no-cache \
+    gcompat \
+    glib \
+    nss \
+    libxcb \
+    libgcc \
+    chromium \
+    && ln -s /usr/bin/chromium-browser /usr/bin/google-chrome-stable || true
+
+ENV CHROME_PATH=/usr/bin/chromium-browser \
+    PUPPETEER_SKIP_DOWNLOAD=true
+
 # Супервизор (условная установка)
 RUN if [ "$INSTALL_SUPERVISOR" = "true" ]; then \
     apk add --no-cache supervisor && \
