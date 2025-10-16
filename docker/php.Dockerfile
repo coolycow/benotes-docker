@@ -67,6 +67,11 @@ ENV CHROME_PATH=/usr/bin/chromium-browser \
 
 # ==== УСТАНОВКА GD ====
 RUN apk add --no-cache \
+    freetype \
+    libjpeg-turbo \
+    libpng \
+    libwebp \
+    libxpm \
     freetype-dev \
     libjpeg-turbo-dev \
     libpng-dev \
@@ -78,7 +83,12 @@ RUN apk add --no-cache \
       --with-webp=/usr/include/ \
       --with-xpm=/usr/include/ \
  && docker-php-ext-install gd \
- && apk del freetype-dev libjpeg-turbo-dev libpng-dev libwebp-dev libxpm-dev
+ && apk del \
+      freetype-dev \
+      libjpeg-turbo-dev \
+      libpng-dev \
+      libwebp-dev \
+      libxpm-dev
 
 # Супервизор (условная установка)
 RUN if [ "$INSTALL_SUPERVISOR" = "true" ]; then \
