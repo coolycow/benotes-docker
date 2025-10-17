@@ -47,6 +47,12 @@ RUN apk --update add wget \
     && docker-php-ext-configure intl && docker-php-ext-install intl \
     && docker-php-ext-configure pcntl && docker-php-ext-install pcntl
 
+# Установка runtime-зависимостей (останутся в образе)
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/install-php-extensions && \
+    install-php-extensions raphf pecl_http
+
 # Установка Redis
 RUN mkdir -p /usr/src/php/ext/redis && \
     curl -L https://github.com/phpredis/phpredis/archive/5.3.4.tar.gz | tar xvz -C /usr/src/php/ext/redis --strip 1 && \
@@ -90,7 +96,7 @@ RUN apk add --no-cache \
       libwebp-dev \
       libxpm-dev
 
-# Супервизор (условная установка)
+# Установка Supervisor если нужно
 RUN if [ "$INSTALL_SUPERVISOR" = "true" ]; then \
     apk add --no-cache supervisor && \
     mkdir -p /etc/supervisord.d; \

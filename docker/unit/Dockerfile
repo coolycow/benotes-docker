@@ -34,12 +34,15 @@ RUN apt-get update -qq && \
         libicu-dev \
         libzip-dev \
         libssl-dev \
-        libpq-dev && \
+        libpq-dev \
+        libcurl4-openssl-dev \
+        libevent-dev \
+        zlib1g-dev && \
     docker-php-ext-install -j$(nproc) pdo pdo_mysql pdo_pgsql pgsql opcache exif zip intl pcntl sockets && \
-    pecl install redis && \
-    docker-php-ext-enable redis && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    pecl install raphf && docker-php-ext-enable raphf && \
+    pecl install pecl_http && docker-php-ext-enable http && \
+    pecl install redis && docker-php-ext-enable redis && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # ==== УСТАНОВКА GD ====
 RUN apt-get update && apt-get install -y \
